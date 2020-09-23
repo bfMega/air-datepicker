@@ -13,7 +13,7 @@
         defaults = {
             classes: '',
             inline: false,
-            language: 'ru',
+            language: 'en',
             startDate: new Date(),
             firstDay: '',
             weekends: [6, 0],
@@ -223,13 +223,13 @@
             if (typeof lang == 'string') {
                 this.loc = $.fn.datepicker.language[lang];
                 if (!this.loc) {
-                    console.warn('Can\'t find language "' + lang + '" in Datepicker.language, will use "ru" instead');
-                    this.loc = $.extend(true, {}, $.fn.datepicker.language.ru)
+                    console.warn('Can\'t find language "' + lang + '" in Datepicker.language, will use "en" instead');
+                    this.loc = $.extend(true, {}, $.fn.datepicker.language.en)
                 }
 
-                this.loc = $.extend(true, {}, $.fn.datepicker.language.ru, $.fn.datepicker.language[lang])
+                this.loc = $.extend(true, {}, $.fn.datepicker.language.en, $.fn.datepicker.language[lang])
             } else {
-                this.loc = $.extend(true, {}, $.fn.datepicker.language.ru, lang)
+                this.loc = $.extend(true, {}, $.fn.datepicker.language.en, lang)
             }
 
             if (this.opts.dateFormat) {
@@ -262,7 +262,7 @@
 
         _buildDatepickersContainer: function () {
             containerBuilt = true;
-            $body.append('<div class="datepickers-container" id="datepickers-container"></div>');
+            $body.safeAppend('<div class="datepickers-container" id="datepickers-container"></div>');
             $datepickersContainer = $('#datepickers-container');
         },
 
@@ -280,7 +280,9 @@
                 $appendTarget = $inline.appendTo(this.$el)
             }
 
-            this.$datepicker = $(baseTemplate).appendTo($appendTarget);
+            $appendTarget.safeAppend(baseTemplate);
+            this.$datepicker = this.opts.inline ? $('.datepicker-inline:last-child', $appendTarget)
+                : $('.datepicker:last-child', $appendTarget);
             this.$content = $('.datepicker--content', this.$datepicker);
             this.$nav = $('.datepicker--nav', this.$datepicker);
         },
@@ -1472,24 +1474,19 @@
     $.fn.datepicker.Constructor = Datepicker;
 
     $.fn.datepicker.language = {
-        ru: {
-            days: ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'],
-            daysShort: ['Вос','Пон','Вто','Сре','Чет','Пят','Суб'],
-            daysMin: ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'],
-            months: ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'],
-            monthsShort: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'],
-            today: 'Сегодня',
-            clear: 'Очистить',
-            dateFormat: 'dd.mm.yyyy',
-            timeFormat: 'hh:ii',
-            firstDay: 1
+        en: {
+            days: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+            daysShort: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+            daysMin: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
+            months: ['January','February','March','April','May','June', 'July','August','September','October','November','December'],
+            monthsShort: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+            today: 'Today',
+            clear: 'Clear',
+            dateFormat: 'mm/dd/yyyy',
+            timeFormat: 'hh:ii aa',
+            firstDay: 0
         }
     };
-
-    $(function () {
-        $(autoInitSelector).datepicker();
-    })
-
 })();
 
 ;(function () {
@@ -1534,7 +1531,8 @@
         },
 
         _buildBaseHtml: function () {
-            this.$el = $(templates[this.type]).appendTo(this.d.$content);
+            this.d.$content.safeAppend(templates[this.type]);
+            this.$el = $('.datepicker--' + escapeHTML(this.type), this.d.$content).last();
             this.$names = $('.datepicker--days-names', this.$el);
             this.$cells = $('.datepicker--cells', this.$el);
         },
@@ -1723,18 +1721,18 @@
                 var dayNames = this._getDayNamesHtml(this.d.loc.firstDay),
                     days = this._getDaysHtml(this.d.currentDate);
 
-                this.$cells.html(days);
-                this.$names.html(dayNames)
+                this.$cells.safeHTML(days);
+                this.$names.safeHTML(dayNames)
             },
             months: function () {
                 var html = this._getMonthsHtml(this.d.currentDate);
 
-                this.$cells.html(html)
+                this.$cells.safeHTML(html)
             },
             years: function () {
                 var html = this._getYearsHtml(this.d.currentDate);
 
-                this.$cells.html(html)
+                this.$cells.safeHTML(html)
             }
         },
 
@@ -1854,7 +1852,7 @@
         _render: function () {
             var title = this._getTitle(this.d.currentDate),
                 html = dp.template(template, $.extend({title: title}, this.opts));
-            this.d.$nav.html(html);
+            this.d.$nav.safeHTML(html);
             if (this.d.view == 'years') {
                 $('.datepicker--nav-title', this.d.$nav).addClass('-disabled-');
             }
@@ -1877,11 +1875,11 @@
                 html = dp.template(button, data);
 
             if ($('[data-action=' + type + ']', this.$buttonsContainer).length) return;
-            this.$buttonsContainer.append(html);
+            this.$buttonsContainer.safeAppend(html);
         },
 
         _addButtonsContainer: function () {
-            this.d.$datepicker.append(buttonsContainerTemplate);
+            this.d.$datepicker.safeAppend(buttonsContainerTemplate);
             this.$buttonsContainer = $('.datepicker--buttons', this.d.$datepicker);
         },
 
@@ -2076,7 +2074,8 @@
                 },
                 _template = dp.template(template, data);
 
-            this.$timepicker = $(_template).appendTo(this.d.$datepicker);
+            this.d.$datepicker.safeAppend(_template);
+            this.$timepicker = $('.datepicker--time:last-child', this.d.$datepicker);
             this.$ranges = $('[type="range"]', this.$timepicker);
             this.$hours = $('[name="hours"]', this.$timepicker);
             this.$minutes = $('[name="minutes"]', this.$timepicker);
@@ -2086,7 +2085,7 @@
             if (this.d.ampm) {
                 this.$ampm = $('<span class="datepicker--time-current-ampm">')
                     .appendTo($('.datepicker--time-current', this.$timepicker))
-                    .html(this.dayPeriod);
+                    .safeHTML(this.dayPeriod);
 
                 this.$timepicker.addClass('-am-pm-');
             }
@@ -2096,11 +2095,11 @@
             var h =  dp.getLeadingZeroNum(this.displayHours),
                 m = dp.getLeadingZeroNum(this.minutes);
 
-            this.$hoursText.html(h);
-            this.$minutesText.html(m);
+            this.$hoursText.safeHTML(h);
+            this.$minutesText.safeHTML(m);
 
             if (this.d.ampm) {
-                this.$ampm.html(this.dayPeriod);
+                this.$ampm.safeHTML(this.dayPeriod);
             }
         },
 
@@ -2201,7 +2200,7 @@
         _onChangeRange: function (e) {
             var $target = $(e.target),
                 name = $target.attr('name');
-            
+
             this.d.timepickerIsActive = true;
 
             this[name] = $target.val();
